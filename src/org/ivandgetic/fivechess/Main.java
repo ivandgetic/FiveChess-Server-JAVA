@@ -1,25 +1,28 @@
 package org.ivandgetic.fivechess;
 
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.ArrayList;
 
 /**
  * Created by ivandgetic on 14/7/10.
  */
 public class Main {
-    private static final int SOCKET_PORT = 50000;
     public static ArrayList<User> usersList = new ArrayList<User>();
 
     public static void main(String[] args) {
-
+        createDB();
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    ServerSocket serverSocket = new ServerSocket(SOCKET_PORT);
+                    ServerSocket serverSocket = new ServerSocket(50000);
                     System.out.println("服务器启动！");
                     while (true) {
                         Socket socket = serverSocket.accept();
@@ -39,6 +42,24 @@ public class Main {
             new DataOutputStream(user.getSocket().getOutputStream()).writeUTF("operate:clear");
             for (User useri : Main.usersList) {
                 new DataOutputStream(user.getSocket().getOutputStream()).writeUTF("information:" + useri.getName() + ":" + useri.getState() + ":" + useri.socket.getRemoteSocketAddress().toString());
+            }
+        }
+    }
+
+
+    private static void createDB() {
+        File dir = new File("FiveChessDB.db");
+        if (!dir.exists()) {
+            try {
+                Class.forName("org.sqlite.JDBC");
+                Connection c = DriverManager.getConnection("jdbc:sqlite:FiveChessDB.db");
+                Statement stmt = c.createStatement();
+                String sql = "CREATE TABLE information (name TEXT NOT NULL,password TEXT NOT NULL)";
+                stmt.executeUpdate(sql);
+                stmt.close();
+                c.close();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
